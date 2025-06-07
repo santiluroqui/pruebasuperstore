@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Superstore Insights{% endblock %}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/2.0.8/css/dataTables.dataTables.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    
+    <script>
+        // Función para aplicar o remover la clase 'dark-mode'
+        function applyTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            localStorage.setItem('theme', theme); // Guardar preferencia en localStorage
+        }
+
+        // Detectar preferencia de usuario al cargar
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme) {
+                applyTheme(savedTheme);
+            } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                applyTheme('dark'); // Usar preferencia del sistema si no hay una guardada
+            } else {
+                applyTheme('light'); // Por defecto, light mode
+            }
+        });
+    </script>
+</head>
+<body>
+    <div class="wrapper">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <img src="{{ url_for('static', filename='images/superstore_logo.png') }}" alt="Superstore Logo" class="sidebar-logo">
+                <span class="dashboard-title">Superstore Insights</span>
+            </div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li><a href="{{ url_for('dashboard') }}" class="{% if request.endpoint == 'dashboard' %}active{% endif %}"><i class="fas fa-chart-line"></i> Dashboard General</a></li>
+                    <li><a href="{{ url_for('clientes') }}" class="{% if request.endpoint == 'clientes' %}active{% endif %}"><i class="fas fa-user-friends"></i> Clientes</a></li>
+                    <li><a href="{{ url_for('productos') }}" class="{% if request.endpoint == 'productos' %}active{% endif %}"><i class="fas fa-box"></i> Productos</a></li>
+                    <li><a href="{{ url_for('regiones') }}" class="{% if request.endpoint == 'regiones' %}active{% endif %}"><i class="fas fa-map-marked-alt"></i> Regiones</a></li>
+                    <li><a href="{{ url_for('tiempo') }}" class="{% if request.endpoint == 'tiempo' %}active{% endif %}"><i class="fas fa-clock"></i> Tiempo</a></li>
+                    <li class="separator"></li> {# Línea separadora #}
+                    {% if current_user.is_authenticated %}
+                        <li><a href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</a></li>
+                    {% else %}
+                        <li><a href="{{ url_for('login') }}"><i class="fas fa-sign-in-alt"></i> Iniciar Sesión</a></li>
+                        <li><a href="{{ url_for('register') }}"><i class="fas fa-user-plus"></i> Registrarse</a></li>
+                    {% endif %}
+                    <li><a href="#"><i class="fas fa-cog"></i> Configuración</a></li> {# Placeholder por ahora #}
+                </ul>
+            </nav>
+        </aside>
+
+        <div class="main-content">
+            <header class="main-header">
+                <div class="header-left">
+                    <h1 class="page-title">{% block page_title %}{% endblock %}</h1>
+                    <span class="page-subtitle">{% block page_subtitle %}{% endblock %}</span>
+                </div>
+                <div class="header-right">
+                    <div class="user-info">
+                        {% if current_user.is_authenticated %}
+                            <span>Hola, {{ current_user.username }}!</span>
+                            <i class="fas fa-user-circle user-icon"></i>
+                        {% endif %}
+                    </div>
+                    <div class="date-picker-placeholder">
+                        <input type="date" id="start-date" value="2014-01-01">
+                        <input type="date" id="end-date" value="2017-12-31">
+                    </div>
+                    <button id="theme-toggle" class="theme-toggle-btn">
+                        <i class="fas fa-moon"></i>
+                    </button>
+                    <div class="search-bar">
+                        <input type="text" placeholder="Buscar...">
+                        <i class="fas fa-search"></i>
+                    </div>
+                </div>
+            </header>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="flash-messages">
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }}">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            <main class="content-area">
+                {% block content %}{% endblock %}
+            </main>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script type="text/javascript" src="https://cdn.datatables.net/2.0.8/js/dataTables.min.js"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>
