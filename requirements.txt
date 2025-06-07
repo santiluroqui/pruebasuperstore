@@ -1,0 +1,7 @@
+Flask==2.3.3 # O tu versión actual si es superior
+Flask-SQLAlchemy==3.0.3 # O tu versión actual
+Flask-Login==0.6.2 # O tu versión actual
+Werkzeug==2.3.7 # O tu versión actual
+psycopg2-binary==2.9.9 # O tu versión actual
+pandas==2.2.2 # Necesario para manipulación de datos en algunas APIs
+SQLAlchemy==2.0.25 # Necesario para el String en los modelos

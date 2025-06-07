@@ -1,0 +1,295 @@
+{% extends "base.html" %}
+
+{% block title %}Tiempo - Superstore Insights{% endblock %}
+{% block page_title %}Análisis Temporal{% endblock %}
+{% block page_subtitle %}Visualización de tendencias y patrones a lo largo del tiempo{% endblock %}
+
+{% block content %}
+    <div class="chart-grid">
+        <div id="sales-by-year-month-chart" class="chart-box">
+            <h3>Ventas por Año y Mes</h3>
+            <canvas id="salesByYearMonthCanvas" width="400" height="200"></canvas>
+        </div>
+        <div id="sales-by-day-of-week-chart" class="chart-box">
+            <h3>Ventas por Día de la Semana</h3>
+            <canvas id="salesByDayOfWeekCanvas" width="400" height="200"></canvas>
+        </div>
+        <div id="sales-heatmap" class="chart-box">
+            <h3>Ventas Mensuales (Heatmap)</h3>
+            <svg width="450" height="300"></svg> {# D3.js para heatmap #}
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log("tiempo.html loaded.");
+
+        // --- Gráfico de Ventas por Año y Mes (Line Chart) ---
+        fetch('/api/sales_by_year_month')
+            .then(response => {
+                if (!response.ok) {
+                    if (response.status === 401) { window.location.href = '/login'; }
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log("Ventas por Año y Mes:", data);
+                if (!data || data.length === 0) {
+                    const ctx = document.getElementById('salesByYearMonthCanvas').getContext('2d');
+                    ctx.font = "16px Arial";
+                    ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--text-color');
+                    ctx.textAlign = "center";
+                    ctx.fillText("No hay datos disponibles", ctx.canvas.width / 2, ctx.canvas.height / 2);
+                    return;
+                }
+
+                const labels = data.map(d => d.year_month);
+                const sales = data.map(d => d.total_sales);
+
+                const ctx = document.getElementById('salesByYearMonthCanvas').getContext('2d');
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Ventas ($)',
+                            data: sales,
+                            borderColor: getComputedStyle(document.documentElement).getPropertyValue('--sidebar-accent-color'),
+                            backgroundColor: 'rgba(52, 152, 219, 0.2)',
+                            fill: true,
+                            tension: 0.1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: 'Ventas Mensuales a lo largo del Tiempo',
+                                color: getComputedStyle(document.documentElement).getPropertyValue('--text-color')
+                            },
+                            legend: {
+                                labels: {
+                                    color: getComputedStyle(document.documentElement).getPropertyValue('--text-color')
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                grid: {
+                                    color: getComputedStyle(document.documentElement).getPropertyValue('--kpi-border')
+                                },
+                                ticks: {
+                                    color: getComputedStyle(document.documentElement).getPropertyValue('--chart-text')
+                                }
+                            },
+                            y: {
+                                beginAtZero: true,
+                                grid: {
+                                    color: getComputedStyle(document.documentElement).getPropertyValue('--kpi-border')
+                                },
+                                ticks: {
+                                    color: getComputedStyle(document.documentElement).getPropertyValue('--chart-text')
+                                }
+                            }
+                        }
+                    }
+                });
+            })
+            .catch(error => console.error('Error fetching sales by year month:', error));
+
+        // --- Gráfico de Ventas por Día de la Semana (Bar Chart) ---
+        fetch('/api/sales_by_day_of_week')
+            .then(response => {
+                if (!response.ok) {
+                    if (response.status === 401) { window.location.href = '/login'; }
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log("Ventas por Día de la Semana:", data);
+                if (!data || data.length === 0) {
+                    const ctx = document.getElementById('salesByDayOfWeekCanvas').getContext('2d');
+                    ctx.font = "16px Arial";
+                    ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--text-color');
+                    ctx.textAlign = "center";
+                    ctx.fillText("No hay datos disponibles", ctx.canvas.width / 2, ctx.canvas.height / 2);
+                    return;
+                }
+
+                const labels = data.map(d => d.day);
+                const sales = data.map(d => d.total_sales);
+
+                const ctx = document.getElementById('salesByDayOfWeekCanvas').getContext('2d');
+                new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Ventas ($)',
+                            data: sales,
+                            backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--sidebar-accent-color'),
+                            borderColor: getComputedStyle(document.documentElement).getPropertyValue('--sidebar-accent-color'),
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            title: {
+                                display: true,
+                                text: 'Ventas por Día de la Semana',
+                                color: getComputedStyle(document.documentElement).getPropertyValue('--text-color')
+                            }
+                        },
+                        scales: {
+                            x: {
+                                grid: {
+                                    color: getComputedStyle(document.documentElement).getPropertyValue('--kpi-border')
+                                },
+                                ticks: {
+                                    color: getComputedStyle(document.documentElement).getPropertyValue('--chart-text')
+                                }
+                            },
+                            y: {
+                                beginAtZero: true,
+                                grid: {
+                                    color: getComputedStyle(document.documentElement).getPropertyValue('--kpi-border')
+                                },
+                                ticks: {
+                                    color: getComputedStyle(document.documentElement).getPropertyValue('--chart-text')
+                                }
+                            }
+                        }
+                    }
+                });
+            })
+            .catch(error => console.error('Error fetching sales by day of week:', error));
+        
+        // --- Heatmap de Ventas Mensuales (D3.js) ---
+        function drawHeatmap(data, elementId, title) {
+            if (!data || data.length === 0) {
+                console.warn(`No hay datos para dibujar el heatmap en ${elementId}.`);
+                d3.select(`#${elementId}`).select("svg").html("<text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' fill='var(--text-color)'>No hay datos disponibles</text>");
+                return;
+            }
+
+            const container = d3.select(`#${elementId}`);
+            const svg = container.select("svg");
+            const margin = {top: 40, right: 30, bottom: 60, left: 60};
+            const width = +svg.attr("width") - margin.left - margin.right;
+            const height = +svg.attr("height") - margin.top - margin.bottom;
+
+            svg.selectAll("*").remove(); // Limpiar SVG anterior
+
+            const g = svg.append("g")
+                .attr("transform", `translate(${margin.left},${margin.top})`);
+
+            // Escalas
+            const months = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+            const days = Array.from({length: 31}, (_, i) => i + 1);
+
+            const x = d3.scaleBand()
+                .range([0, width])
+                .domain(days)
+                .padding(0.01);
+
+            const y = d3.scaleBand()
+                .range([height, 0])
+                .domain(months.reverse()) // Meses en orden inverso para que Enero esté arriba
+                .padding(0.01);
+
+            // Escala de color para la intensidad de ventas
+            const colorScale = d3.scaleSequential(d3.interpolateViridis) // Puedes usar d3.interpolateGreens, d3.interpolateBlues, etc.
+                .domain([0, d3.max(data, d => d.value)]); // Rango de ventas para el color
+
+            // Ejes
+            g.append("g")
+                .attr("class", "axis axis--x")
+                .attr("transform", `translate(0,${height})`)
+                .call(d3.axisBottom(x))
+                .selectAll("text")
+                .style("fill", "var(--chart-text)");
+
+            g.append("g")
+                .attr("class", "axis axis--y")
+                .call(d3.axisLeft(y))
+                .selectAll("text")
+                .style("fill", "var(--chart-text)");
+
+            // Rectángulos del heatmap
+            g.selectAll(".cell")
+                .data(data, d => `${d.month}:${d.day}`)
+                .enter().append("rect")
+                    .attr("x", d => x(d.day))
+                    .attr("y", d => y(d.month))
+                    .attr("width", x.bandwidth())
+                    .attr("height", y.bandwidth())
+                    .style("fill", d => colorScale(d.value))
+                    .style("stroke", "var(--card-border)")
+                    .style("stroke-width", 1)
+                    .on("mouseover", function(event, d) {
+                        d3.select(this).style("stroke", "black").style("stroke-width", 2);
+                        const tooltip = d3.select("body").append("div")
+                            .attr("class", "tooltip")
+                            .style("opacity", 0)
+                            .style("position", "absolute")
+                            .style("background-color", "rgba(0,0,0,0.8)")
+                            .style("color", "white")
+                            .style("padding", "5px")
+                            .style("border-radius", "3px");
+
+                        tooltip.transition()
+                            .duration(200)
+                            .style("opacity", .9);
+                        tooltip.html(`Fecha: ${d.day} ${d.month}<br/>Ventas: $${d.value.toFixed(2)}`)
+                            .style("left", (event.pageX + 5) + "px")
+                            .style("top", (event.pageY - 28) + "px");
+                    })
+                    .on("mouseout", function(event, d) {
+                        d3.select(this).style("stroke", "var(--card-border)").style("stroke-width", 1);
+                        d3.selectAll(".tooltip").remove();
+                    });
+
+            // Título del gráfico
+            g.append("text")
+                .attr("x", (width / 2))             
+                .attr("y", 0 - (margin.top / 2))
+                .attr("text-anchor", "middle")  
+                .style("font-size", "16px") 
+                .style("font-weight", "bold")
+                .style("fill", "var(--text-color)")
+                .text(title);
+            
+            // Estilo de los ejes
+            g.selectAll(".axis path, .axis line")
+                .style("stroke", "var(--chart-text)");
+            g.selectAll(".axis text")
+                .style("fill", "var(--chart-text)");
+        }
+
+        fetch('/api/sales_heatmap')
+            .then(response => {
+                if (!response.ok) {
+                    if (response.status === 401) { window.location.href = '/login'; }
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log("Datos de Heatmap:", data);
+                drawHeatmap(data, 'sales-heatmap', 'Ventas por Día del Mes y Mes');
+            })
+            .catch(error => console.error('Error fetching sales heatmap:', error));
+    });
+</script>
+{% endblock %}
